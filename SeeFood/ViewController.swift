@@ -62,7 +62,13 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
 			guard let results = request.results as? [VNClassificationObservation] else {
 				fatalError("Model failed to process image")
 			}
-			print(results )
+			if let firstResult = results.first {
+				if firstResult.identifier.contains("hotdog") {
+					self.navigationItem.title = "Hotdog!"
+				} else {
+					self.navigationItem.title = "Not Hotdog!"
+				}
+			}
 		}
 		let handler = VNImageRequestHandler(ciImage: image)
 		
