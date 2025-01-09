@@ -27,6 +27,7 @@ class ViewController: UIViewController {
 		//imagePicker.sourceType = .camera
 		imagePicker.sourceType = .photoLibrary
 		imagePicker.allowsEditing = false
+		imageView.contentMode = .scaleAspectFit
     }
 	
 	// MARK: - IBActions
@@ -41,8 +42,34 @@ extension ViewController: UIImagePickerControllerDelegate, UINavigationControlle
 	// MARK: - UIImagePickerControllerDelegate
 	
 	func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
-		guard let image = info[UIImagePickerController.InfoKey.originalImage] as? UIImage else { return }
-		imageView.image = image
+		guard let userPickedImage = info[UIImagePickerController.InfoKey.originalImage] as? UIImage else {
+			print("Could not get image")
+			return
+		}
+		imageView.image = userPickedImage
+		guard let ciImage = CIImage(image: userPickedImage) else {
+			fatalError("Could not convert UIImage into CIImage")
+		}
+		detect(image: ciImage)
 		imagePicker.dismiss(animated: true, completion: nil)
+	}
+	
+	private func detect(image: CIImage) {
+		guard let model = try? VNCoreMLModel(for: Inceptionv3().model) else {
+			fatalError("Loading CoreML model failed")
+		}
+		let request = VNCoreMLRequest(model: model) { request, error in
+			guard let results = request.results as? [VNClassificationObservation] else {
+				fatalError("Model failed to process image")
+			}
+			print(results )
+		}
+		let handler = VNImageRequestHandler(ciImage: image)
+		
+		do {
+			try handler.perform([request])
+		} catch {
+			print("Error performing request: \(error)")
+		}
 	}
 }
